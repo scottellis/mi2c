@@ -1,0 +1,27 @@
+diff --git git/arch/arm/mach-omap2/board-overo.c git/arch/arm/mach-omap2/board-overo.c
+index 95efc77..e8a74ae 100644
+--- git/arch/arm/mach-omap2/board-overo.c
++++ git/arch/arm/mach-omap2/board-overo.c
+@@ -607,12 +607,20 @@ static struct i2c_board_info __initdata overo_i2c_boardinfo[] = {
+ 	},
+ };
+ 
+#define MI2C_DEVICE_I2C_ADDRESS	0x20
++static struct i2c_board_info __initdata mi2c_i2c_boardinfo[] = {
++	{
++		I2C_BOARD_INFO("mi2c", MI2C_DEVICE_I2C_ADDRESS),
++	},
++};
++
+ static int __init overo_i2c_init(void)
+ {
+ 	omap_register_i2c_bus(1, 2600, overo_i2c_boardinfo,
+ 			ARRAY_SIZE(overo_i2c_boardinfo));
+ 	/* i2c2 pins are used for gpio */
+-	omap_register_i2c_bus(3, 400, NULL, 0);
++	omap_register_i2c_bus(3, 100, mi2c_i2c_boardinfo, 
++			ARRAY_SIZE(mi2c_i2c_boardinfo));
++
+ 	return 0;
+ }
+ 
