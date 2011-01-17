@@ -3,7 +3,7 @@ if [[ -z "${KERNEL_CROSS_BUILD_ENVIRONMENT_SOURCED}" ]]; then
 	BOARD=overo
 
 	OETMP=${OVEROTOP}/tmp
-	#OETMP=/oe6
+	#OETMP=/oe1
 
 	SYSROOTSDIR=${OETMP}/sysroots
 	STAGEDIR=${SYSROOTSDIR}/`uname -m`-linux/usr
