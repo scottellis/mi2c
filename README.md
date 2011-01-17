@@ -6,11 +6,11 @@ need to finish the i2c driver segment on the website. This is the code I will
 be referencing though.
 
 mi2c is a character device driver that demonstrates how you can use i2c within
-another driver for multiple devices if different types.
+another driver for multiple devices of different types.
 
-Instead of the way you normally see i2c devices declared, statically in board
-files, this driver also dynamically register devices on module load sparing
-you any kernel changes.
+Instead of statically declaring i2c devices in the kernel board files, this 
+driver dynamically register devices on module load avoiding any kernel rebuilds
+at least on stock Overo kernels. 
 
 The driver declares the ability to handle two types of devices, "blinkm" and
 "arduino" devices.
