@@ -38,6 +38,7 @@ Here is a sample session.
 
 
 If you do a read of the mi2c device, you'll get some simple output
+
 	root@overo:~# cat /dev/mi2c 
 	BlinkM at 0x01 (r,g,b) 240 120 40
 	BlinkM at 0x03 (r,g,b) 50 70 200
@@ -51,4 +52,16 @@ And then unloading the module
 	[ 1802.072875] mi2c_i2c_remove
 	[ 1802.075805] mi2c_i2c_remove
 	[ 1802.078796] mi2c_i2c_remove
+
+
+If you wanted to make this more generic, you might want to pass the 
+i2c_board_info struct to mi2c_init_i2c() since the i2c driver part of the
+code doesn't really care. 
+
+Most of the time, my i2c code is usually pretty tightly integrated with
+the rest of the driver that is dealing with the other hardware. I don't worry
+too much about hard-coding a few things. The i2c code is very simple.
+
+I might clean it up a little anyway, just to make it more generic for future 
+projects.
 
