@@ -1,83 +1,81 @@
 /*
- * The mt9p001 isp camera driver I2C functionality.
+ * An example of how to implement an i2c Linux driver as a loadable module with
+ * dynamic device registration. 
  *
+ * Also demonstrate some simple functionality with fictitious devices.
+ * 
+ * The example supposes two devices. The devices need not be similar and you 
+ * could have more. I am using device_id to distinguish the devices, but you
+ * could come up with your own method.
+ *
+ * This driver was meant to be included as a module in a bigger driver which
+ * is most likely why you would want to use a kernel i2c solution.
+ *
+ * If you were not doing i2c as part of a larger driver, then the simpler
+ * solution is to use the standard /dev/i2c-x driver from userspace.
  */
 
 #include <linux/init.h>
-#define DEBUG
 #include <linux/device.h>
 #include <linux/i2c.h>
 
-#include "mi2c.h"
+#include "mi2c.h" /* for DRIVER_NAME */
 
-struct i2c_client *mi2c_i2c_client;
 
-int mi2c_i2c_write(unsigned char *buf, int count)
+#define BLINKM_DEVICE	"blinkm"
+#define ARDUINO_DEVICE	"arduino"
+
+#define BLINKM_1_ADDRESS	0x01
+#define BLINKM_2_ADDRESS	0x03
+#define ARDUINO_ADDRESS		0x10
+#define NUM_DEVICES		3
+
+
+static struct i2c_client *mi2c_i2c_client[NUM_DEVICES];
+
+static struct i2c_board_info mi2c_board_info[NUM_DEVICES] = {
+	{
+		I2C_BOARD_INFO(BLINKM_DEVICE, BLINKM_1_ADDRESS),
+	},
+	{
+		I2C_BOARD_INFO(BLINKM_DEVICE, BLINKM_2_ADDRESS),
+	},
+	{
+		I2C_BOARD_INFO(ARDUINO_DEVICE, ARDUINO_ADDRESS),
+	}
+};
+
+int mi2c_i2c_get_address(unsigned int device_id)
 {
-	if (!mi2c_i2c_client)
+	if (device_id >= NUM_DEVICES)
+		return -EINVAL;
+
+	if (!mi2c_i2c_client[device_id])
 		return -ENODEV;
 
-	return i2c_master_send(mi2c_i2c_client, buf, count);
+	return mi2c_i2c_client[device_id]->addr;
 }
 
-int mi2c_i2c_read(unsigned char *buf, int count)
+int mi2c_i2c_write(unsigned int device_id, unsigned char *buf, int count)
 {
-	if (!mi2c_i2c_client)
+	if (device_id >= NUM_DEVICES)
+		return -EINVAL;
+
+	if (!mi2c_i2c_client[device_id])
 		return -ENODEV;
 
-	return i2c_master_recv(mi2c_i2c_client, buf, count);
+	return i2c_master_send(mi2c_i2c_client[device_id], buf, count);
 }
 
-/*
- * An example helper function you might want. Suppose the device requires
- * us to specify a two-byte address to read a one-byte data.
- * I'm just making up the byte-ordering. 
- */
-int mi2c_read_reg(unsigned short reg, unsigned char *val)
+int mi2c_i2c_read(unsigned int device_id, unsigned char *buf, int count)
 {
-	int result;
-	unsigned char buff[2];
+	if (device_id >= NUM_DEVICES)
+		return -EINVAL;
 
-	buff[0] = (reg >> 8) & 0xff;
-	buff[1] = reg & 0xff;
+	if (!mi2c_i2c_client[device_id])
+		return -ENODEV;
 
-	result = mi2c_i2c_write(buff, 2);
-
-	if (result != 2)
-		return result;
-
-	buff[0] = 0;
-
-	result = mi2c_i2c_read(buff, 1);
-
-	if (result != 1)
-		return result;
-
-	if (val)
-		*val = buff[0];
-
-	return 0;
-}
-
-/*
- * A similar example helper function pretending that the deivce requires
- * writes to specify a two-byte address followed by one-byte of data.
- */
-int mi2c_write_reg(unsigned short reg, unsigned char val)
-{
-	int result;
-	char buff[4];
-
-	buff[0] = (reg >> 8) & 0xff;
-	buff[1] = reg & 0xff;
-	buff[2] = val;
-	
-	result = mi2c_i2c_write(buff, 3);
-
-	if (result != 3)
-		return result;
-	
-	return 0;
+	return i2c_master_recv(mi2c_i2c_client[device_id], buf, count);
 }
 
 static int __init
@@ -85,15 +83,8 @@ mi2c_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	printk(KERN_INFO "mi2c_i2c_probe\n");
 
-	if (mi2c_i2c_client) {
-		printk(KERN_WARNING "client already in use\n");
-		return -EBUSY;
-	}
-
-	printk(KERN_INFO "%s registered for address 0x%x\n", 
+	printk(KERN_INFO "%s driver registered for device at address 0x%02x\n", 
 		client->name, client->addr);
-
-	mi2c_i2c_client = client;
 
 	return 0;
 }
@@ -103,13 +94,13 @@ mi2c_i2c_remove(struct i2c_client *client)
 {
 	printk(KERN_INFO "mi2c_i2c_remove\n");
 
-	mi2c_i2c_client = NULL;
-
 	return 0;
 }
 
+/* our driver handles two types of device */
 static const struct i2c_device_id mi2c_id[] = {
-	{ DRIVER_NAME, 0 },
+	{ BLINKM_DEVICE, 0 },
+	{ ARDUINO_DEVICE, 0 },
 	{ },
 };
 MODULE_DEVICE_TABLE(i2c, mi2c_id);
@@ -125,13 +116,55 @@ static struct i2c_driver mi2c_i2c_driver = {
 	.remove		= mi2c_i2c_remove,
 };
 
+#define I2C_BUS		3
 int __init mi2c_init_i2c(void)
 {
-	return i2c_add_driver(&mi2c_i2c_driver);
+	int i, ret;
+
+	struct i2c_adapter *adapter;
+
+	/* register our driver */
+	ret = i2c_add_driver(&mi2c_i2c_driver);
+	if (ret) {
+		printk(KERN_ALERT "Error registering i2c driver\n");
+		return ret;
+	}
+
+	/* add our devices */
+	adapter = i2c_get_adapter(I2C_BUS);
+
+	if (!adapter) {
+		printk(KERN_ALERT "i2c_get_adapter(%d) failed\n", I2C_BUS);
+		return -1;
+	}
+
+	for (i = 0; i < NUM_DEVICES; i++) {
+		mi2c_i2c_client[i] = i2c_new_device(adapter, 
+							&mi2c_board_info[i]); 
+
+			
+		if (!mi2c_i2c_client[i]) {
+			printk(KERN_ALERT "i2c_new_device failed\n");
+			break;
+		}
+	}
+
+	i2c_put_adapter(adapter);		
+	
+	return i == NUM_DEVICES ? 0 : -1;
 }
 
 void __exit mi2c_cleanup_i2c(void)
 {
+	int i;
+
+	for (i = 0; i < NUM_DEVICES; i++) {
+		if (mi2c_i2c_client[i]) {
+			i2c_unregister_device(mi2c_i2c_client[i]);
+			mi2c_i2c_client[i] = NULL;
+		}
+	}
+
 	i2c_del_driver(&mi2c_i2c_driver);
 }
 
