@@ -59,9 +59,8 @@ i2c_board_info struct to mi2c_init_i2c() since the i2c driver part of the
 code doesn't really care. 
 
 Most of the time, my i2c code is usually pretty tightly integrated with
-the rest of the driver that is dealing with the other hardware. I don't worry
-too much about hard-coding a few things. The i2c code is very simple.
+the rest of the driver dealing with other hardware. The i2c portion is
+pretty simple and easy to customize after cut-n-paste.
 
-I might clean it up a little anyway, just to make it more generic for future 
-projects.
+I might clean it up a little anyway, just to make it more generic for others.
 
