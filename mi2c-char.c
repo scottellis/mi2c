@@ -28,6 +28,70 @@ struct mi2c_dev {
 
 static struct mi2c_dev mi2c_dev;
 
+/* 
+ * An example just to demo how you would use the write/read functions.
+ * I have some BlinkM leds this driver is handling. This is how you read
+ * their current color value. No error handling on the val pointer.
+ */
+#define GET_CURRENT_RGB_COLOR			0x67
+static int blinkm_read_rgb(unsigned int device_id, unsigned char *val) 
+{
+	int result;
+	unsigned char buff[4];
+
+	buff[0] = GET_CURRENT_RGB_COLOR;
+
+	result = mi2c_i2c_write(device_id, buff, 1);
+
+	if (result != 1)
+		return result;
+
+	buff[0] = 0;
+	buff[1] = 0;
+	buff[2] = 0;
+
+	result = mi2c_i2c_read(device_id, buff, 3);
+
+	if (result != 3)
+		return result;
+
+	val[0] = buff[0];
+	val[1] = buff[1];
+	val[2] = buff[2];
+
+	return 0;
+}
+
+/* 
+ * See the arduino_i2c_slave.pde under the arduino_i2c_slave directory
+ * for the arduino code. Basically, the arduino is running a simple program
+ * where he responds to 1 byte commands with a two-byte response.
+ */
+static int arduino_run_command(unsigned char cmd, unsigned int *val) 
+{
+	int result;
+	unsigned char buff[2];
+
+	buff[0] = cmd;
+
+	/* We know the Arduino is device_id 2. It's just a demo... */
+	result = mi2c_i2c_write(2, buff, 1);
+
+	if (result != 1)
+		return result;
+
+	buff[0] = 0;
+	buff[1] = 0;
+
+	result = mi2c_i2c_read(2, buff, 2);
+
+	if (result != 2)
+		return result;
+
+	*val = (buff[0] << 8) | buff[1];
+
+	return 0;
+}
 
 static ssize_t mi2c_write(struct file *filp, const char __user *buff,
 		size_t count, loff_t *f_pos)
@@ -68,6 +132,8 @@ static ssize_t mi2c_read(struct file *filp, char __user *buff,
 {
 	ssize_t status;
 	size_t len;
+	unsigned int i, addr, val;
+	unsigned char rgb[4], cmd;
 
 	/* 
 	Generic user progs like cat will continue calling until we 
@@ -80,8 +146,35 @@ static ssize_t mi2c_read(struct file *filp, char __user *buff,
 	if (down_interruptible(&mi2c_dev.sem)) 
 		return -ERESTARTSYS;
 
-	strcpy(mi2c_dev.user_buff, "mi2c driver data\n");
+	memset(rgb, 0, sizeof(rgb));
+	memset(mi2c_dev.user_buff, 0, USER_BUFF_SIZE);
+	len = 0;
 
+	/* This is only for my test devices, a couple of BlinkM leds. */
+	for (i = 0; i < 2; i++) {
+		if (blinkm_read_rgb(i, rgb) < 0) {
+			printk(KERN_ALERT "Read of BlinkM %d failed\n", i);
+		}
+		else {
+			addr = mi2c_i2c_get_address(i);
+
+			len += sprintf(mi2c_dev.user_buff + len, 
+				"BlinkM at 0x%02X (r,g,b) %d %d %d\n",
+				addr, rgb[0], rgb[1], rgb[2]);
+		}
+	}		
+	/* and one Arduino device */
+	addr = mi2c_i2c_get_address(2);
+	val = 0;
+	cmd = 0x02;
+
+	if (arduino_run_command(cmd, &val) < 0)
+		printk(KERN_ALERT "Read of Arduino at 0x%02X failed\n", addr);
+	else
+		len += sprintf(mi2c_dev.user_buff + len, 
+			"Arduino at 0x%02X responded to 0x%02X with 0x%04X\n",
+			addr, cmd, val);
+		
 	len = strlen(mi2c_dev.user_buff);
 
 	if (len > count)
