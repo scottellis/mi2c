@@ -1,6 +1,6 @@
 /*
-  Char device implementation for a kernel module that uses i2c.
-*/
+ * Char device wrapper for the mi2c-i2c kernel module example.
+ */
 
 #include <linux/init.h>
 #include <linux/module.h>
@@ -91,40 +91,6 @@ static int arduino_run_command(unsigned char cmd, unsigned int *val)
 	*val = (buff[0] << 8) | buff[1];
 
 	return 0;
-}
-
-static ssize_t mi2c_write(struct file *filp, const char __user *buff,
-		size_t count, loff_t *f_pos)
-{
-	ssize_t status;
-	size_t len = USER_BUFF_SIZE - 1;
-
-	if (count == 0)
-		return 0;
-
-	if (down_interruptible(&mi2c_dev.sem))
-		return -ERESTARTSYS;
-
-	if (len > count)
-		len = count;
-	
-	memset(mi2c_dev.user_buff, 0, USER_BUFF_SIZE);
-	
-	if (copy_from_user(mi2c_dev.user_buff, buff, len)) {
-		status = -EFAULT;
-		goto mi2c_write_done;
-	}
-
-	/* do something with the user data */
-
-	status = len;
-	*f_pos += len;
-
-mi2c_write_done:
-
-	up(&mi2c_dev.sem);
-
-	return status;
 }
 
 static ssize_t mi2c_read(struct file *filp, char __user *buff, 
@@ -222,7 +188,6 @@ static const struct file_operations mi2c_fops = {
 	.owner = THIS_MODULE,
 	.open =	mi2c_open,	
 	.read =	mi2c_read,
-	.write = mi2c_write,
 };
 
 static int __init mi2c_init_cdev(void)
