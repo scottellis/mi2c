@@ -4,12 +4,11 @@
 This is a demo driver to augment the I2C documentation on my website. I still
 need to finish the writeup, but this is the code I will be referencing.
 
-mi2c demonstrates how you can use i2c within another driver for multiple devices
+mi2c demonstrates how you can use i2c within another driver handling devices
 of different types. It exposes a char dev interface for testing.
 
-Instead of statically declaring i2c devices, the driver register devices when
-the module loads. This avoid having to rebuild kernels when adding new devices,
-at least for Overo boards using i2c-3.
+The driver registers the devices it wants to handle when it loads. This way
+kernel source modifications are not necessary. 
 
 The driver declares the ability to handle two types of devices, "blinkm" and
 "arduino" devices.
@@ -18,11 +17,11 @@ For testing, I have two BlinkM leds at addresses 0x01 and 0x03 and one Arduino
 at address 0x10.
 
 If you want duplicate the test environment you will need to change the default
-address (0x09) for at least one of the two BlinkMs. You could use my blinkm 
+address of 0x09 for at least one of the two BlinkMs. You could use my blinkm 
 project on github for this. 
 
-There is an Arduino pde under the arduino_i2c_slave_pde directory for the
-Arduino slave code. The Arduino uses the analog pin 4 (sda) and pin 5 (scl).
+For the Arduino, there is a pde in the project directory to run the Arduino 
+slave code. The Arduino uses the analog pins 4 (sda) and 5 (scl).
 
 The BlinkM and Arduino are 5V, so you need level conversion from the Overo 1.8V.
 
@@ -60,10 +59,4 @@ And then unloading the module
 If you wanted to make this more generic, you might want to pass the 
 i2c_board_info struct to mi2c_init_i2c() since the i2c driver part of the
 code doesn't really care. 
-
-Most of the time, my i2c code is usually pretty tightly integrated with
-the rest of the driver dealing with other hardware. The i2c portion is
-pretty simple and easy to customize after cut-n-paste.
-
-I might clean it up a little anyway, just to make it more generic for others.
 
