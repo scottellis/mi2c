@@ -2,17 +2,9 @@
  * An example of how to implement an i2c Linux driver as a loadable module with
  * dynamic device registration. 
  *
- * Also demonstrate some simple functionality with fictitious devices.
- * 
- * The example supposes two devices. The devices need not be similar and you 
- * could have more. I am using device_id to distinguish the devices, but you
- * could come up with your own method.
- *
  * This driver was meant to be included as a module in a bigger driver which
  * is most likely why you would want to use a kernel i2c solution.
  *
- * If you were not doing i2c as part of a larger driver, then the simpler
- * solution is to use the standard /dev/i2c-x driver from userspace.
  */
 
 #include <linux/init.h>
