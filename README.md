@@ -2,28 +2,31 @@
 =======
 
 This is a demo driver to augment the I2C documentation on my website. I still
-need to finish the i2c driver segment on the website. This is the code I will
-be referencing though.
+need to finish the writeup, but this is the code I will be referencing.
 
-mi2c is a character device driver that demonstrates how you can use i2c within
-another driver for multiple devices of different types.
+mi2c demonstrates how you can use i2c within another driver for multiple devices
+of different types. It exposes a char dev interface for testing.
 
-Instead of statically declaring i2c devices in the kernel board files, this 
-driver dynamically register devices on module load avoiding any kernel rebuilds
-at least on stock Overo kernels. 
+Instead of statically declaring i2c devices, the driver register devices when
+the module loads. This avoid having to rebuild kernels when adding new devices,
+at least for Overo boards using i2c-3.
 
 The driver declares the ability to handle two types of devices, "blinkm" and
 "arduino" devices.
 
 For testing, I have two BlinkM leds at addresses 0x01 and 0x03 and one Arduino
-at address 0x10. The Overo was a Tide.
+at address 0x10.
 
-If you want duplicate the test environment (don't know why you would) you can 
-use my blinkm project on github to configure the BlinkM's and the included
-Arduino pde under the arduino_i2c_slave_pde directory in this project for the
-Arduino slave code.
+If you want duplicate the test environment you will need to change the default
+address (0x09) for at least one of the two BlinkMs. You could use my blinkm 
+project on github for this. 
 
-There is a bunch of printk's in the driver to see what's going on.
+There is an Arduino pde under the arduino_i2c_slave_pde directory for the
+Arduino slave code. The Arduino uses the analog pin 4 (sda) and pin 5 (scl).
+
+The BlinkM and Arduino are 5V, so you need level conversion from the Overo 1.8V.
+
+I left a bunch of printk's in the driver so you can see what's going on.
 
 Here is a sample session.
 
