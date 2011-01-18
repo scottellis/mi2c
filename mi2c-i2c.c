@@ -81,8 +81,6 @@ int mi2c_i2c_read(unsigned int device_id, unsigned char *buf, int count)
 static int __init
 mi2c_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
-	printk(KERN_INFO "mi2c_i2c_probe\n");
-
 	printk(KERN_INFO "%s driver registered for device at address 0x%02x\n", 
 		client->name, client->addr);
 
@@ -92,7 +90,8 @@ mi2c_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 static int __exit
 mi2c_i2c_remove(struct i2c_client *client)
 {
-	printk(KERN_INFO "mi2c_i2c_remove\n");
+	printk(KERN_INFO "removing %s driver for device at address 0x%02x\n", 
+		client->name, client->addr);
 
 	return 0;
 }
