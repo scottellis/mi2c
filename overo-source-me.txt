@@ -1,27 +1,23 @@
-if [[ -z "${KERNEL_CROSS_BUILD_ENVIRONMENT_SOURCED}" ]]; then
+MACHINE=overo
 
-	BOARD=overo
-
+# export an alternative OETMP before sourcing this file if you
+# don't want the default
+if [[ -z "${OETMP}" ]]; then
 	OETMP=${OVEROTOP}/tmp
-	#OETMP=/oe1
-
-	SYSROOTSDIR=${OETMP}/sysroots
-	STAGEDIR=${SYSROOTSDIR}/`uname -m`-linux/usr
-
-	export KERNELDIR=${SYSROOTSDIR}/${BOARD}-angstrom-linux-gnueabi/kernel
-
-	PATH=${PATH}:${STAGEDIR}/bin:${STAGEDIR}/armv7a/bin
-
-	unset CFLAGS CPPFLAGS CXXFLAGS LDFLAGS MACHINE
-
-	export ARCH="arm"
-	export CROSS_COMPILE="arm-angstrom-linux-gnueabi-"
-	export CC="arm-angstrom-linux-gnueabi-gcc"
-
-	export KERNEL_CROSS_BUILD_ENVIRONMENT_SOURCED="true"
-
-	echo "Altered environment for cross building a kernel module with OE tools."
-else
-	echo "Cross build environment already configured."
 fi
+
+SYSROOTSDIR=${OETMP}/sysroots
+STAGEDIR=${SYSROOTSDIR}/`uname -m`-linux/usr
+
+export KERNELDIR=${SYSROOTSDIR}/${MACHINE}-angstrom-linux-gnueabi/kernel
+
+PATH=${PATH}:${STAGEDIR}/bin:${STAGEDIR}/armv7a/bin
+
+unset CFLAGS CPPFLAGS CXXFLAGS LDFLAGS MACHINE
+
+export ARCH="arm"
+export CROSS_COMPILE="arm-angstrom-linux-gnueabi-"
+export CC="arm-angstrom-linux-gnueabi-gcc"
+export LD="arm-angstrom-linux-gnueabi-ld"
+export STRIP="arm-angstrom-linux-gnueabi-strip"
 
