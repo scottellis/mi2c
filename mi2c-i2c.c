@@ -9,6 +9,7 @@
 
 #include <linux/init.h>
 #include <linux/device.h>
+#include <linux/module.h>
 #include <linux/i2c.h>
 
 #include "mi2c.h" /* for DRIVER_NAME */
@@ -70,8 +71,8 @@ int mi2c_i2c_read(unsigned int device_id, unsigned char *buf, int count)
 	return i2c_master_recv(mi2c_i2c_client[device_id], buf, count);
 }
 
-static int __init
-mi2c_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int mi2c_i2c_probe(struct i2c_client *client, 
+			const struct i2c_device_id *id)
 {
 	printk(KERN_INFO "%s driver registered for device at address 0x%02x\n", 
 		client->name, client->addr);
@@ -79,8 +80,7 @@ mi2c_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	return 0;
 }
 
-static int __exit
-mi2c_i2c_remove(struct i2c_client *client)
+static int mi2c_i2c_remove(struct i2c_client *client)
 {
 	printk(KERN_INFO "removing %s driver for device at address 0x%02x\n", 
 		client->name, client->addr);
